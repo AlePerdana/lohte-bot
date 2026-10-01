@@ -1,0 +1,47 @@
+# Environment & secrets
+.env
+.env.local
+.env.*.local
+
+# Runtime state (token, identitas, daftar kuliah)
+config/state.json
+
+# App config (auto-generate dari default)
+config/config.json
+
+# Virtual environment
+.venv/
+venv/
+env/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+dist/
+build/
+.eggs/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Logs
+logs/*.log
+logs/*.log.*
+!logs/.gitkeep
+
+# IDE / editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Jangan commit HAR berisi token (jika taruh di folder ini)
+*.har
