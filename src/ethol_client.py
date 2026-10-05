@@ -2,6 +2,7 @@
 
 import json
 import time
+import base64
 import logging
 import requests
 from pathlib import Path
@@ -26,6 +27,62 @@ class EtholClient:
 
     def _cookies(self):
         return {"token": self.token}
+
+    # ---------- identitas ----------
+
+    @staticmethod
+    def parse_identity(token: str) -> dict:
+        """Baca identitas (nomor, nipnrp, nama) dari payload JWT token.
+
+        Token ETHOL = JWT (header.payload). Payload memuat nomor mahasiswa,
+        jadi identitas bisa didapat tanpa request API tambahan.
+        """
+        try:
+            payload = token.split(".")[1]
+            payload += "=" * (-len(payload) % 4)
+            data = json.loads(base64.urlsafe_b64decode(payload))
+            if isinstance(data, dict) and data.get("nomor"):
+                return data
+        except Exception:
+            pass
+        return {}
+
+    def identitas(self) -> dict:
+        """Identitas mahasiswa dari payload token (fallback: validasi-token)."""
+        data = self.parse_identity(self.token)
+        if data.get("nomor"):
+            return data
+        try:
+            resp = self.validasi_token()
+        except Exception:
+            return {}
+        if isinstance(resp, dict):
+            for candidate in (resp, resp.get("data")):
+                if isinstance(candidate, dict) and candidate.get("nomor"):
+                    return candidate
+        return {}
+
+    def sync_identitas(self) -> dict:
+        """Simpan identitas mahasiswa ke state.json bila belum ada.
+
+        Return dict identitas (bisa kosong bila gagal).
+        """
+        from src.utils import load_state, save_state
+        state = load_state()
+        mhs = state.get("mahasiswa") or {}
+        if mhs.get("nomor"):
+            return mhs
+        data = self.identitas()
+        if data.get("nomor"):
+            mhs = {
+                "nomor": data.get("nomor"),
+                "nipnrp": data.get("nipnrp", ""),
+                "nama": data.get("nama", ""),
+            }
+            state["mahasiswa"] = mhs
+            save_state(state)
+            log.info("identitas tersimpan: %s (%s)", mhs["nama"], mhs["nomor"])
+        return mhs
 
     def validasi_token(self) -> dict:
         r = self.session.get(
@@ -62,10 +119,12 @@ class EtholClient:
         """
         try:
             self.validasi_token()
+            self.sync_identitas()
             return True
         except Exception:
             log.info("token expired, attempting refresh...")
             if self.refresh():
+                self.sync_identitas()
                 return True
 
             # Fallback: coba login ulang
@@ -81,6 +140,7 @@ class EtholClient:
                 self.token = hasil["token"]
                 self.refresh_token = hasil.get("refresh_token") or self.refresh_token
                 self._simpan_state()
+                self.sync_identitas()
                 log.info("auto-login sukses, token baru tersimpan di state.json")
                 return True
             return False

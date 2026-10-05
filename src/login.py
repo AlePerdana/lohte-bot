@@ -133,9 +133,9 @@ def login_dan_simpan():
         client = EtholClient(hasil["token"], hasil["refresh_token"])
         identitas = {}
         try:
-            identitas = client.validasi_token()
+            identitas = client.identitas()
         except Exception as e:
-            log.warning("validasi-token gagal setelah login: %s", e)
+            log.warning("ambil identitas gagal setelah login: %s", e)
         mahasiswa = {
             "nomor": identitas.get("nomor"),
             "nipnrp": identitas.get("nipnrp"),

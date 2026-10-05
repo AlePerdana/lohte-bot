@@ -293,6 +293,7 @@ Tambahkan (contoh: deteksi tiap menit Senin–Jumat jam 07.00–18.00):
 | `token expired` terus-menerus | auto-refresh belum jalan | `systemctl --user restart ethol-bot` |
 | `timeout` / `The read operation timed out` | server ETHOL lambat | Normal — bot punya retry; cek lagi nanti |
 | Presensi tidak terdeteksi | dosen belum buka presensi | Presensi hanya muncul saat dosen membukanya |
+| `Parameter tidak valid` saat submit presensi | nomor mahasiswa belum terisi (auto-diisi dari token) | Jalankan `.venv/bin/python login.py`, atau set `ETHOL_NOMOR` di `.env` |
 | `ModuleNotFoundError: dotenv` | lupa venv | Pakai `.venv/bin/python ...` (bukan `python3`) |
 | Service tidak jalan | linger belum aktif | `sudo loginctl enable-linger $USER` |
 

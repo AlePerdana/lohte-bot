@@ -12,8 +12,16 @@ class PresensiAuto:
     def __init__(self, client: EtholClient, config: dict):
         self.client = client
         self.cfg = config
-        self.mahasiswa = config["mahasiswa"]["nomor"]
+        self.mahasiswa = (config.get("mahasiswa") or {}).get("nomor")
         self.lo, self.hi = config.get("presensi_interval", [5, 60])
+
+    def _mahasiswa_nomor(self) -> int | None:
+        """Nomor mahasiswa; resolve dari token/state bila belum diketahui."""
+        if self.mahasiswa:
+            return self.mahasiswa
+        mhs = self.client.sync_identitas()
+        self.mahasiswa = mhs.get("nomor")
+        return self.mahasiswa
 
     def sekali(self, kuliah: int, jenis_schema: int = 4) -> dict | None:
         """Cek & submit presensi sekali. Return result dict atau None."""
@@ -28,10 +36,15 @@ class PresensiAuto:
         key = info.get("key")
         log.info("presensi aktif! kuliah=%s key=%s", kuliah, key)
 
+        mahasiswa = self._mahasiswa_nomor()
+        if not mahasiswa:
+            log.error("nomor mahasiswa tidak diketahui (set ETHOL_NOMOR atau jalankan login.py)")
+            return {"sukses": False, "pesan": "nomor mahasiswa tidak diketahui", "key": key}
+
         try:
             hasil = self.client.submit_presensi(
                 kuliah=kuliah,
-                mahasiswa=self.mahasiswa,
+                mahasiswa=mahasiswa,
                 key=key,
                 jenis_schema=jenis_schema,
             )

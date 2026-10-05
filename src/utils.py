@@ -105,6 +105,14 @@ def load_config() -> dict:
         cfg["semester"] = state["semester"]
 
     # .env overrides (preferences)
+    if os.getenv("ETHOL_NOMOR"):
+        try:
+            cfg["mahasiswa"]["nomor"] = int(os.environ["ETHOL_NOMOR"])
+        except ValueError:
+            logging.getLogger("utils").warning(
+                "ETHOL_NOMOR bukan angka: %s", os.environ["ETHOL_NOMOR"])
+    if os.getenv("ETHOL_NIPNRP"):
+        cfg["mahasiswa"]["nipnrp"] = os.environ["ETHOL_NIPNRP"]
     if os.getenv("ETHOL_LOGIN_USERNAME"):
         cfg["login_username"] = os.environ["ETHOL_LOGIN_USERNAME"]
     if os.getenv("ETHOL_LOGIN_PASSWORD"):
